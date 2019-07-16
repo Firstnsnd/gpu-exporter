@@ -165,7 +165,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			continue
 		}else {
 			for i:=0; i < len(pids); i++ {
-				p, err := ps.FindProcess(int(pid[i]))
+				p, err := ps.FindProcess(int(pids[i]))
 				pName := p.Executable()
 				if err != nil {
 					fmt.Println("Error : ", err)
