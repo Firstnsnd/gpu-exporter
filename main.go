@@ -3,12 +3,12 @@ package main
 import "C"
 import (
 	"flag"
+
 	"log"
 	"net/http"
 	"strconv"
 	"sync"
-
-	"./nvml"
+	"gpu-exporter/nvml"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
