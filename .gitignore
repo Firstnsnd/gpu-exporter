@@ -1,1 +1,2 @@
-.ali.yaml
+*.yaml
+.idea

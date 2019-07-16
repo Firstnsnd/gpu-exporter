@@ -4,7 +4,6 @@ import "C"
 import (
 	"flag"
 	"fmt"
-	nvml2 "nvml"
 	"os"
 	"strings"
 
