@@ -4,13 +4,13 @@ import "C"
 import (
 	"flag"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/vaniot-s/nvml"
 	"log"
 	"net/http"
 	"strconv"
 	"sync"
-	"gpu-exporter/nvml"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -20,8 +20,8 @@ const (
 var (
 	addr = flag.String("web.listen-address", ":9445", "Address to listen on for web interface and telemetry.")
 
-	labels            = []string{"minor_number", "uuid", "name"}
-	plabels           = []string{"minor_number", "pod_name", "container", "namespace"}
+	labels  = []string{"minor_number", "uuid", "name"}
+	plabels = []string{"minor_number", "pod_name", "container", "namespace"}
 )
 
 type Collector struct {
@@ -118,7 +118,6 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	c.powerUsage.Reset()
 	c.temperature.Reset()
 
-
 	c.pUsedMemory.Reset()
 
 	numDevices, err := nvml.GetDeviceCount()
@@ -143,18 +142,16 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 
 		totalMemory := int(*dev.Memory)
 
-
 		c.totalMemory.WithLabelValues(minor, uuid, name).Set(float64(totalMemory))
 
-
-		devStatus,err:=dev.Status()
+		devStatus, err := dev.Status()
 
 		c.usedMemory.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Memory.Global.Used))
-
 
 		c.dutyCycle.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Utilization.GPU))
 
 		c.powerUsage.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Power))
+
 		c.temperature.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Temperature))
 
 	}
@@ -163,7 +160,6 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	c.dutyCycle.Collect(ch)
 	c.powerUsage.Collect(ch)
 	c.temperature.Collect(ch)
-
 	c.pUsedMemory.Collect(ch)
 }
 
@@ -176,8 +172,6 @@ func main() {
 		log.Fatalf("Couldn't initialize nvml: %v. Make sure NVML is in the shared library search path.", err)
 	}
 	defer nvml.Shutdown()
-
-
 
 	prometheus.MustRegister(NewCollector())
 
