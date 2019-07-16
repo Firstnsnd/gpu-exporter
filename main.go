@@ -212,7 +212,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 				p, err := ps.FindProcess(int(pids[i]))
 				pName := p.Executable()
 				if err != nil {
-					fmt.Println("Error : ", err)
+					log.Printf("Error : ", err)
 					os.Exit(-1)
 				}
 				at := strings.Index(pName, "@")
@@ -232,11 +232,13 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		} else {
 			for i := 0; i < len(ProcessUtilization); i++ {
 				p, err := ps.FindProcess(int(ProcessUtilization[i].PID))
-				pName := p.Executable()
+				log.Printf("pid：%d",)
 				if err != nil {
-					fmt.Println("Error : ", err)
+					log.Printf("Error : ", err)
 					os.Exit(-1)
 				}
+				pName := p.Executable()
+
 				at := strings.Index(pName, "@")
 				slash := strings.Index(pName, "/")
 				container := pName[0:at]

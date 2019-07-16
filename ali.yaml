@@ -23,7 +23,7 @@ spec:
       hostPID: true
       containers:
       - name: node-gpu-exporter
-        image: registry.cn-beijing.aliyuncs.com/nenly/pod-gpu-exporter:test4
+        image: registry.cn-beijing.aliyuncs.com/nenly/pod-gpu-exporter:0716
         imagePullPolicy: Always
         ports:
         - containerPort: 9445
