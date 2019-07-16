@@ -4,13 +4,14 @@ import "C"
 import (
 	"flag"
 	"fmt"
+	nvml2 "nvml"
 	"os"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/vaniot-s/nvml"
 	ps "github.com/vaniot-s/go-ps"
+	"github.com/vaniot-s/nvml"
 	"log"
 	"net/http"
 	"strconv"
@@ -37,6 +38,10 @@ type Collector struct {
 	powerUsage  *prometheus.GaugeVec
 	temperature *prometheus.GaugeVec
 	pUsedMemory *prometheus.GaugeVec
+	pDecUtil    *prometheus.GaugeVec
+	pEncUtil    *prometheus.GaugeVec
+	pMemUtil    *prometheus.GaugeVec
+	pSmUtil     *prometheus.GaugeVec
 }
 
 func NewCollector() *Collector {
@@ -93,7 +98,39 @@ func NewCollector() *Collector {
 		pUsedMemory: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace: namespace,
-				Name:      "process",
+				Name:      "process_graph",
+				Help:      "process of the GPU device ",
+			},
+			plabels,
+		),
+		pDecUtil: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace: namespace,
+				Name:      "process_decutil",
+				Help:      "process of the GPU device ",
+			},
+			plabels,
+		),
+		pEncUtil: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace: namespace,
+				Name:      "process_encutil",
+				Help:      "process of the GPU device ",
+			},
+			plabels,
+		),
+		pMemUtil: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace: namespace,
+				Name:      "process_memutil",
+				Help:      "process of the GPU device ",
+			},
+			plabels,
+		),
+		pSmUtil: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace: namespace,
+				Name:      "process_smutil",
 				Help:      "process of the GPU device ",
 			},
 			plabels,
@@ -109,6 +146,10 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	c.powerUsage.Describe(ch)
 	c.temperature.Describe(ch)
 	c.pUsedMemory.Describe(ch)
+	c.pDecUtil.Describe(ch)
+	c.pEncUtil.Describe(ch)
+	c.pMemUtil.Describe(ch)
+	c.pSmUtil.Describe(ch)
 }
 
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
@@ -123,6 +164,10 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	c.temperature.Reset()
 
 	c.pUsedMemory.Reset()
+	c.pDecUtil.Reset()
+	c.pEncUtil.Reset()
+	c.pMemUtil.Reset()
+	c.pSmUtil.Reset()
 
 	numDevices, err := nvml.GetDeviceCount()
 	if err != nil {
@@ -158,13 +203,13 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 
 		c.temperature.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Temperature))
 
-        //process graph
-        pids,mem,err:= dev.GetGraphicsRunningProcesses()
+		//process graph
+		pids, mem, err := dev.GetGraphicsRunningProcesses()
 		if err != nil {
 			log.Printf("GetGraphicsRunningProcesses()error: %v", err)
 			continue
-		}else {
-			for i:=0; i < len(pids); i++ {
+		} else {
+			for i := 0; i < len(pids); i++ {
 				p, err := ps.FindProcess(int(pids[i]))
 				pName := p.Executable()
 				if err != nil {
@@ -179,6 +224,31 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 				c.pUsedMemory.WithLabelValues(minor, pod, container, nameSpace).Set(float64(mem[i]))
 			}
 		}
+
+		// process unlization
+		ProcessUtilization, err := dev.GetProcessUtilization()
+		if err != nil {
+			log.Printf("GetProcessUtilization()error: %v", err)
+			continue
+		} else {
+			for i := 0; i < len(ProcessUtilization); i++ {
+				p, err := ps.FindProcess(int(ProcessUtilization[i].PID))
+				pName := p.Executable()
+				if err != nil {
+					fmt.Println("Error : ", err)
+					os.Exit(-1)
+				}
+				at := strings.Index(pName, "@")
+				slash := strings.Index(pName, "/")
+				container := pName[0:at]
+				nameSpace := pName[at+1 : slash]
+				pod := strings.Trim(string(pName[slash+1:len(pName)-1]), " ")
+				c.pDecUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].DecUtil))
+				c.pEncUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].EncUtil))
+				c.pMemUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].MemUtil))
+				c.pSmUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].SmUtil))
+			}
+		}
 	}
 	c.usedMemory.Collect(ch)
 	c.totalMemory.Collect(ch)
@@ -186,6 +256,10 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	c.powerUsage.Collect(ch)
 	c.temperature.Collect(ch)
 	c.pUsedMemory.Collect(ch)
+	c.pDecUtil.Collect(ch)
+	c.pEncUtil.Collect(ch)
+	c.pMemUtil.Collect(ch)
+	c.pSmUtil.Collect(ch)
 }
 
 func main() {
