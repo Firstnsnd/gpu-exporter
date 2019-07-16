@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"sync"
 
-	"./nvidia-nvml"
+	"./nvml"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
