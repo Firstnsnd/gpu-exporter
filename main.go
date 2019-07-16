@@ -3,10 +3,14 @@ package main
 import "C"
 import (
 	"flag"
+	"fmt"
+	"os"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/vaniot-s/nvml"
+	ps "github.com/vaniot-s/go-ps"
 	"log"
 	"net/http"
 	"strconv"
@@ -154,6 +158,27 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 
 		c.temperature.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Temperature))
 
+        //process graph
+        pids,mem,err:= dev.GetGraphicsRunningProcesses()
+		if err != nil {
+			log.Printf("GetGraphicsRunningProcesses()error: %v", err)
+			continue
+		}else {
+			for i:=0; i < len(pids); i++ {
+				pName := p.Executable()
+				p, err := ps.FindProcess(int(pid[i]))
+				if err != nil {
+					fmt.Println("Error : ", err)
+					os.Exit(-1)
+				}
+				at := strings.Index(pName, "@")
+				slash := strings.Index(pName, "/")
+				container := pName[0:at]
+				nameSpace := pName[at+1 : slash]
+				pod := strings.Trim(string(pName[slash+1:len(pName)-1]), " ")
+				c.pUsedMemory.WithLabelValues(minor, pod, container, nameSpace).Set(float64(mem[i]))
+			}
+		}
 	}
 	c.usedMemory.Collect(ch)
 	c.totalMemory.Collect(ch)
