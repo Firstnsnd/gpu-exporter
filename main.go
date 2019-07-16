@@ -230,23 +230,25 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			continue
 		} else {
 			for i := 0; i < len(ProcessUtilization); i++ {
-				p, err := ps.FindProcess(int(ProcessUtilization[i].PID))
-				log.Printf("pid：%d",int(ProcessUtilization[i].PID))
-				if err != nil {
-					log.Printf("Error : ", err)
-					os.Exit(-1)
-				}
-				pName := p.Executable()
+				log.Printf("len：%d",len(ProcessUtilization))
+				if int(ProcessUtilization[i].PID)!=0 {
+					p, err := ps.FindProcess(int(ProcessUtilization[i].PID))
+					if err != nil {
+						log.Printf("Error : ", err)
+						os.Exit(-1)
+					}
+					pName := p.Executable()
 
-				at := strings.Index(pName, "@")
-				slash := strings.Index(pName, "/")
-				container := pName[0:at]
-				nameSpace := pName[at+1 : slash]
-				pod := strings.Trim(string(pName[slash+1:len(pName)-1]), " ")
-				c.pDecUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].DecUtil))
-				c.pEncUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].EncUtil))
-				c.pMemUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].MemUtil))
-				c.pSmUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].SmUtil))
+					at := strings.Index(pName, "@")
+					slash := strings.Index(pName, "/")
+					container := pName[0:at]
+					nameSpace := pName[at+1 : slash]
+					pod := strings.Trim(string(pName[slash+1:len(pName)-1]), " ")
+					c.pDecUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].DecUtil))
+					c.pEncUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].EncUtil))
+					c.pMemUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].MemUtil))
+					c.pSmUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].SmUtil))
+				}
 			}
 		}
 	}
