@@ -224,34 +224,45 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		}
 
 		// process unlization
-		ProcessUtilization, err := dev.GetProcessUtilization()
+		processUtilization, err := dev.GetProcessUtilization()
 		log.Printf("process: %v",ProcessUtilization)
 		if err != nil {
 			log.Printf("GetProcessUtilization()error: %v", err)
 			continue
 		} else {
-			for i := 0; i < len(ProcessUtilization); i++ {
-				log.Printf("len：%d",len(ProcessUtilization))
-				log.Printf("pid：%d",int(ProcessUtilization[i].PID))
-
-				if int(ProcessUtilization[i].PID)!=0 {
-					p, err := ps.FindProcess(int(ProcessUtilization[i].PID))
-					if err != nil {
-						log.Printf("Error : ", err)
-						os.Exit(-1)
+			storage:=make([]ProcessUtilization,len(pids))
+			for i := 0; i < len(storage); i++ {
+				storage[i].PID=pids[i]
+			}
+			for i := 0; i < len(processUtilization); i++ {
+				if int(processUtilization[i].PID)!=0 {
+					for j := 0; j < len(storage); j++  {
+						if int(storage[i].PID)==int(processUtilization[j].PID) {
+							storage[i].DecUtil=processUtilization[j].DecUtil
+							storage[i].EncUtil=processUtilization[j].EncUtil
+							storage[i].MemUtil=processUtilization[j].MemUtil
+							storage[i].SmUtil=processUtilization[j].SmUtil
+						}
 					}
-					pName := p.Executable()
-
-					at := strings.Index(pName, "@")
-					slash := strings.Index(pName, "/")
-					container := pName[0:at]
-					nameSpace := pName[at+1 : slash]
-					pod := strings.Trim(string(pName[slash+1:len(pName)-1]), " ")
-					c.pDecUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].DecUtil))
-					c.pEncUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].EncUtil))
-					c.pMemUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].MemUtil))
-					c.pSmUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(ProcessUtilization[i].SmUtil))
 				}
+			}
+			for k := 0; k < len(storage); k++ {
+				p, err := ps.FindProcess(int(storage[k].PID))
+				if err != nil {
+					log.Printf("Error : ", err)
+					os.Exit(-1)
+				}
+				pName := p.Executable()
+
+				at := strings.Index(pName, "@")
+				slash := strings.Index(pName, "/")
+				container := pName[0:at]
+				nameSpace := pName[at+1 : slash]
+				pod := strings.Trim(string(pName[slash+1:len(pName)-1]), " ")
+				c.pDecUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(storage[k].DecUtil))
+				c.pEncUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(storage[k].EncUtil))
+				c.pMemUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(storage[k].MemUtil))
+				c.pSmUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(storage[k].SmUtil))
 			}
 		}
 	}
