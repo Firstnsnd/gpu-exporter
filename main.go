@@ -234,20 +234,20 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			for i := 0; i < len(storage); i++ {
 				storage[i].PID=pids[i]
 			}
-			for i := 0; i < len(processUtilization); i++ {
-				if int(processUtilization[i].PID)!=0 {
-					for j := 0; j < len(storage); j++  {
-						if int(storage[i].PID)==int(processUtilization[j].PID) {
-							storage[i].DecUtil=processUtilization[j].DecUtil
-							storage[i].EncUtil=processUtilization[j].EncUtil
-							storage[i].MemUtil=processUtilization[j].MemUtil
-							storage[i].SmUtil=processUtilization[j].SmUtil
+			for j := 0; j < len(processUtilization); j++ {
+				if int(processUtilization[j].PID)!=0 {
+					for k := 0; k < len(storage); k++  {
+						if int(storage[k].PID)==int(processUtilization[j].PID) {
+							storage[k].DecUtil=processUtilization[j].DecUtil
+							storage[k].EncUtil=processUtilization[j].EncUtil
+							storage[k].MemUtil=processUtilization[j].MemUtil
+							storage[k].SmUtil=processUtilization[j].SmUtil
 						}
 					}
 				}
 			}
-			for k := 0; k < len(storage); k++ {
-				p, err := ps.FindProcess(int(storage[k].PID))
+			for l := 0; l < len(storage); l++ {
+				p, err := ps.FindProcess(int(storage[l].PID))
 				if err != nil {
 					log.Printf("Error : ", err)
 					os.Exit(-1)
@@ -259,10 +259,10 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 				container := pName[0:at]
 				nameSpace := pName[at+1 : slash]
 				pod := strings.Trim(string(pName[slash+1:len(pName)-1]), " ")
-				c.pDecUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(storage[k].DecUtil))
-				c.pEncUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(storage[k].EncUtil))
-				c.pMemUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(storage[k].MemUtil))
-				c.pSmUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(storage[k].SmUtil))
+				c.pDecUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(storage[l].DecUtil))
+				c.pEncUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(storage[l].EncUtil))
+				c.pMemUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(storage[l].MemUtil))
+				c.pSmUtil.WithLabelValues(minor, pod, container, nameSpace).Set(float64(storage[l].SmUtil))
 			}
 		}
 	}
