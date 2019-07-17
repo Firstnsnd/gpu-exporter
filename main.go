@@ -225,12 +225,11 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 
 		// process unlization
 		processUtilization, err := dev.GetProcessUtilization()
-		log.Printf("process: %v",ProcessUtilization)
 		if err != nil {
 			log.Printf("GetProcessUtilization()error: %v", err)
 			continue
 		} else {
-			storage:=make([]ProcessUtilization,len(pids))
+			storage:=make([]nvml.ProcessUtilization,len(pids))
 			for i := 0; i < len(storage); i++ {
 				storage[i].PID=pids[i]
 			}
