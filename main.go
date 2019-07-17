@@ -231,6 +231,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		} else {
 			for i := 0; i < len(ProcessUtilization); i++ {
 				log.Printf("len：%d",len(ProcessUtilization))
+				log.Printf("pid：%d",int(ProcessUtilization[i].PID))
 				if int(ProcessUtilization[i].PID)!=0 {
 					p, err := ps.FindProcess(int(ProcessUtilization[i].PID))
 					if err != nil {
