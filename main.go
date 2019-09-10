@@ -35,6 +35,8 @@ type Collector struct {
 	dutyCycle   *prometheus.GaugeVec
 	powerUsage  *prometheus.GaugeVec
 	temperature *prometheus.GaugeVec
+	encUtil     *prometheus.GaugeVec
+	decUtil     *prometheus.GaugeVec
 	pUsedMemory *prometheus.GaugeVec
 	pDecUtil    *prometheus.GaugeVec
 	pEncUtil    *prometheus.GaugeVec
@@ -92,7 +94,22 @@ func NewCollector() *Collector {
 			},
 			labels,
 		),
-
+		encUtil: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace: namespace,
+				Name:      "encUtil",
+				Help:      "encUtil of the GPU device",
+			},
+			labels,
+		),
+		decUtil: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace: namespace,
+				Name:      "encUtil",
+				Help:      "encUtil of the GPU device",
+			},
+			labels,
+		),
 		pUsedMemory: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace: namespace,
@@ -143,6 +160,8 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	c.dutyCycle.Describe(ch)
 	c.powerUsage.Describe(ch)
 	c.temperature.Describe(ch)
+	c.encUtil.Describe(ch)
+	c.decUtil.Describe(ch)
 	c.pUsedMemory.Describe(ch)
 	c.pDecUtil.Describe(ch)
 	c.pEncUtil.Describe(ch)
@@ -160,7 +179,8 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	c.dutyCycle.Reset()
 	c.powerUsage.Reset()
 	c.temperature.Reset()
-
+	c.encUtil.Reset()
+	c.decUtil.Reset()
 	c.pUsedMemory.Reset()
 	c.pDecUtil.Reset()
 	c.pEncUtil.Reset()
@@ -200,7 +220,8 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		c.powerUsage.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Power))
 
 		c.temperature.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Temperature))
-
+		c.encUtil.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Encoder))
+		c.decUtil.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Decoder))
 		//process graph
 		pids, mem, err := dev.GetGraphicsRunningProcesses()
 		if err != nil {
@@ -229,18 +250,18 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			log.Printf("GetProcessUtilization()error: %v", err)
 			continue
 		} else {
-			storage:=make([]nvml.ProcessUtilization,len(pids))
+			storage := make([]nvml.ProcessUtilization, len(pids))
 			for i := 0; i < len(storage); i++ {
-				storage[i].PID=pids[i]
+				storage[i].PID = pids[i]
 			}
 			for j := 0; j < len(processUtilization); j++ {
-				if int(processUtilization[j].PID)!=0 {
-					for k := 0; k < len(storage); k++  {
-						if int(storage[k].PID)==int(processUtilization[j].PID) {
-							storage[k].DecUtil=processUtilization[j].DecUtil
-							storage[k].EncUtil=processUtilization[j].EncUtil
-							storage[k].MemUtil=processUtilization[j].MemUtil
-							storage[k].SmUtil=processUtilization[j].SmUtil
+				if int(processUtilization[j].PID) != 0 {
+					for k := 0; k < len(storage); k++ {
+						if int(storage[k].PID) == int(processUtilization[j].PID) {
+							storage[k].DecUtil = processUtilization[j].DecUtil
+							storage[k].EncUtil = processUtilization[j].EncUtil
+							storage[k].MemUtil = processUtilization[j].MemUtil
+							storage[k].SmUtil = processUtilization[j].SmUtil
 						}
 					}
 				}
