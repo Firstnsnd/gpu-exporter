@@ -223,6 +223,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		c.encUtil.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Utilization.Encoder))
 		c.decUtil.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Utilization.Decoder))
 		//process graph
+		log.Printf("sdasdasdasda")
 		pids, mem, err := dev.GetGraphicsRunningProcesses()
 		if err != nil {
 			log.Printf("GetGraphicsRunningProcesses()error: %v", err)
