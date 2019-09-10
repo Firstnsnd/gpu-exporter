@@ -220,8 +220,8 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		c.powerUsage.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Power))
 
 		c.temperature.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Temperature))
-		c.encUtil.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Encoder))
-		c.decUtil.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Decoder))
+		c.encUtil.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Utilization.Encoder))
+		c.decUtil.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Utilization.Decoder))
 		//process graph
 		pids, mem, err := dev.GetGraphicsRunningProcesses()
 		if err != nil {
