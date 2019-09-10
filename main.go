@@ -105,8 +105,8 @@ func NewCollector() *Collector {
 		decUtil: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace: namespace,
-				Name:      "encUtil",
-				Help:      "encUtil of the GPU device",
+				Name:      "decUtil",
+				Help:      "decUtil of the GPU device",
 			},
 			labels,
 		),
