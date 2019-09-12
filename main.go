@@ -223,9 +223,6 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		c.encUtil.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Utilization.Encoder))
 		c.decUtil.WithLabelValues(minor, uuid, name).Set(float64(*devStatus.Utilization.Decoder))
 		//process graph
-		log.Printf("gpu：%d",float64(*devStatus.Utilization.GPU))
-		log.Printf("Encoder：%d",float64(*devStatus.Utilization.Encoder))
-		log.Printf("Decoder：%d",float64(*devStatus.Utilization.Decoder))
 		pids, mem, err := dev.GetGraphicsRunningProcesses()
 		if err != nil {
 			log.Printf("GetGraphicsRunningProcesses()error: %v", err)
